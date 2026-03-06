@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 const STORAGE_KEY = "survey_app_data";
 
@@ -26,7 +26,6 @@ function saveData(data) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-// Simple QR code via Google Charts API
 function QRCode({ url, size = 200 }) {
   if (!url) return null;
   const encoded = encodeURIComponent(url);
@@ -39,56 +38,27 @@ function QRCode({ url, size = 200 }) {
 // ── TAB: 설문 편집 ──────────────────────────────────────────────
 function EditTab({ survey, onChange }) {
   const [localSurvey, setLocalSurvey] = useState(survey);
-
   useEffect(() => setLocalSurvey(survey), [survey]);
 
-  const update = (updated) => {
-    setLocalSurvey(updated);
-    onChange(updated);
-  };
-
+  const update = (updated) => { setLocalSurvey(updated); onChange(updated); };
   const addQuestion = () => {
     const newQ = { id: Date.now(), type: "radio", text: "새 질문", options: ["옵션 1", "옵션 2"] };
     update({ ...localSurvey, questions: [...localSurvey.questions, newQ] });
   };
-
   const removeQuestion = (id) => update({ ...localSurvey, questions: localSurvey.questions.filter(q => q.id !== id) });
-
-  const updateQuestion = (id, field, value) => {
-    update({
-      ...localSurvey,
-      questions: localSurvey.questions.map(q => q.id === id ? { ...q, [field]: value } : q),
-    });
-  };
-
-  const addOption = (id) => {
-    const q = localSurvey.questions.find(q => q.id === id);
-    updateQuestion(id, "options", [...q.options, `옵션 ${q.options.length + 1}`]);
-  };
-
-  const updateOption = (qid, idx, val) => {
-    const q = localSurvey.questions.find(q => q.id === qid);
-    const opts = [...q.options];
-    opts[idx] = val;
-    updateQuestion(qid, "options", opts);
-  };
-
-  const removeOption = (qid, idx) => {
-    const q = localSurvey.questions.find(q => q.id === qid);
-    updateQuestion(qid, "options", q.options.filter((_, i) => i !== idx));
-  };
+  const updateQuestion = (id, field, value) => update({ ...localSurvey, questions: localSurvey.questions.map(q => q.id === id ? { ...q, [field]: value } : q) });
+  const addOption = (id) => { const q = localSurvey.questions.find(q => q.id === id); updateQuestion(id, "options", [...q.options, `옵션 ${q.options.length + 1}`]); };
+  const updateOption = (qid, idx, val) => { const q = localSurvey.questions.find(q => q.id === qid); const opts = [...q.options]; opts[idx] = val; updateQuestion(qid, "options", opts); };
+  const removeOption = (qid, idx) => { const q = localSurvey.questions.find(q => q.id === qid); updateQuestion(qid, "options", q.options.filter((_, i) => i !== idx)); };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* 설문 기본 정보 */}
       <div style={cardStyle}>
         <label style={labelStyle}>설문 제목</label>
         <input style={inputStyle} value={localSurvey.title} onChange={e => update({ ...localSurvey, title: e.target.value })} placeholder="설문 제목을 입력하세요" />
         <label style={{ ...labelStyle, marginTop: 12 }}>설명</label>
         <textarea style={{ ...inputStyle, height: 72, resize: "vertical" }} value={localSurvey.description} onChange={e => update({ ...localSurvey, description: e.target.value })} placeholder="설문 설명을 입력하세요" />
       </div>
-
-      {/* 질문 목록 */}
       {localSurvey.questions.map((q, qi) => (
         <div key={q.id} style={cardStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -103,7 +73,6 @@ function EditTab({ survey, onChange }) {
             <option value="checkbox">복수 선택 (체크박스)</option>
             <option value="text">주관식 텍스트</option>
           </select>
-
           {q.type !== "text" && (
             <div style={{ marginTop: 12 }}>
               <label style={labelStyle}>선택지</label>
@@ -118,7 +87,6 @@ function EditTab({ survey, onChange }) {
           )}
         </div>
       ))}
-
       <button onClick={addQuestion} style={primaryBtnStyle}>+ 질문 추가</button>
     </div>
   );
@@ -130,19 +98,9 @@ function SurveyTab({ survey, onSubmit }) {
   const [submitted, setSubmitted] = useState(false);
 
   const handleRadio = (qid, val) => setAnswers(a => ({ ...a, [qid]: val }));
-  const handleCheckbox = (qid, val, checked) => {
-    setAnswers(a => {
-      const prev = a[qid] || [];
-      return { ...a, [qid]: checked ? [...prev, val] : prev.filter(v => v !== val) };
-    });
-  };
+  const handleCheckbox = (qid, val, checked) => setAnswers(a => { const prev = a[qid] || []; return { ...a, [qid]: checked ? [...prev, val] : prev.filter(v => v !== val) }; });
   const handleText = (qid, val) => setAnswers(a => ({ ...a, [qid]: val }));
-
-  const handleSubmit = () => {
-    onSubmit({ answers, timestamp: new Date().toISOString() });
-    setSubmitted(true);
-    setAnswers({});
-  };
+  const handleSubmit = () => { onSubmit({ answers, timestamp: new Date().toISOString() }); setSubmitted(true); setAnswers({}); };
 
   if (submitted) return (
     <div style={{ textAlign: "center", padding: "60px 20px" }}>
@@ -159,7 +117,6 @@ function SurveyTab({ survey, onSubmit }) {
         <h2 style={{ margin: "0 0 8px", color: "#6C63FF" }}>{survey.title}</h2>
         <p style={{ margin: 0, color: "#666" }}>{survey.description}</p>
       </div>
-
       {survey.questions.map((q, qi) => (
         <div key={q.id} style={cardStyle}>
           <p style={{ fontWeight: 700, marginBottom: 14, color: "#222" }}><span style={{ color: "#6C63FF" }}>{qi + 1}.</span> {q.text}</p>
@@ -180,7 +137,6 @@ function SurveyTab({ survey, onSubmit }) {
           )}
         </div>
       ))}
-
       <button onClick={handleSubmit} style={{ ...primaryBtnStyle, fontSize: 16, padding: "16px 24px" }}>제출하기 →</button>
     </div>
   );
@@ -198,35 +154,22 @@ function ResultsTab({ survey, responses, onClear }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ background: "#6C63FF", color: "#fff", borderRadius: 20, padding: "6px 18px", fontWeight: 700 }}>
-          총 {responses.length}명 응답
-        </div>
+        <div style={{ background: "#6C63FF", color: "#fff", borderRadius: 20, padding: "6px 18px", fontWeight: 700 }}>총 {responses.length}명 응답</div>
         <button onClick={onClear} style={dangerBtnStyle}>전체 초기화</button>
       </div>
-
       {survey.questions.map((q, qi) => {
         const allAnswers = responses.map(r => r.answers[q.id]).filter(Boolean);
-
-        if (q.type === "text") {
-          return (
-            <div key={q.id} style={cardStyle}>
-              <h4 style={{ color: "#6C63FF", marginBottom: 12 }}>{qi + 1}. {q.text}</h4>
-              {allAnswers.length === 0 ? <p style={{ color: "#aaa" }}>응답 없음</p> : allAnswers.map((ans, i) => (
-                <div key={i} style={{ background: "#f8f8ff", borderRadius: 8, padding: "10px 14px", marginBottom: 8, fontSize: 14, color: "#444", borderLeft: "3px solid #6C63FF" }}>{ans}</div>
-              ))}
-            </div>
-          );
-        }
-
-        // count options
+        if (q.type === "text") return (
+          <div key={q.id} style={cardStyle}>
+            <h4 style={{ color: "#6C63FF", marginBottom: 12 }}>{qi + 1}. {q.text}</h4>
+            {allAnswers.length === 0 ? <p style={{ color: "#aaa" }}>응답 없음</p> : allAnswers.map((ans, i) => (
+              <div key={i} style={{ background: "#f8f8ff", borderRadius: 8, padding: "10px 14px", marginBottom: 8, fontSize: 14, color: "#444", borderLeft: "3px solid #6C63FF" }}>{ans}</div>
+            ))}
+          </div>
+        );
         const counts = {};
         q.options.forEach(opt => counts[opt] = 0);
-        allAnswers.forEach(ans => {
-          const vals = Array.isArray(ans) ? ans : [ans];
-          vals.forEach(v => { if (counts[v] !== undefined) counts[v]++; });
-        });
-        const max = Math.max(...Object.values(counts), 1);
-
+        allAnswers.forEach(ans => { const vals = Array.isArray(ans) ? ans : [ans]; vals.forEach(v => { if (counts[v] !== undefined) counts[v]++; }); });
         return (
           <div key={q.id} style={cardStyle}>
             <h4 style={{ color: "#6C63FF", marginBottom: 16 }}>{qi + 1}. {q.text}</h4>
@@ -248,8 +191,6 @@ function ResultsTab({ survey, responses, onClear }) {
           </div>
         );
       })}
-
-      {/* 개별 응답 */}
       <div style={cardStyle}>
         <h4 style={{ color: "#6C63FF", marginBottom: 12 }}>개별 응답 기록</h4>
         {responses.map((r, i) => (
@@ -264,35 +205,50 @@ function ResultsTab({ survey, responses, onClear }) {
 
 // ── TAB: QR 코드 ──────────────────────────────────────────────
 function QRTab() {
-  const [url, setUrl] = useState("");
+  const currentBase = window.location.origin;
+  const publicUrl = `${currentBase}?mode=public`;
+  const [customUrl, setCustomUrl] = useState("");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* 참여자용 QR (자동 생성) */}
       <div style={cardStyle}>
-        <h3 style={{ color: "#6C63FF", marginBottom: 8 }}>QR 코드 생성</h3>
-        <p style={{ color: "#888", fontSize: 14, marginBottom: 16 }}>설문 페이지 URL을 입력하면 QR 코드가 생성됩니다.<br />생성된 QR을 스캔하면 바로 설문 페이지로 이동합니다.</p>
-        <label style={labelStyle}>설문 URL</label>
-        <input style={inputStyle} value={url} onChange={e => setUrl(e.target.value)} placeholder="https://your-survey-link.com" />
+        <h3 style={{ color: "#6C63FF", marginBottom: 4 }}>👥 참여자용 QR (설문만 보임)</h3>
+        <p style={{ color: "#888", fontSize: 13, marginBottom: 16 }}>이 QR을 인쇄해서 나눠주세요.<br />탭 없이 설문 화면만 바로 열립니다!</p>
+        <div style={{ textAlign: "center" }}>
+          <QRCode url={publicUrl} size={200} />
+          <p style={{ fontSize: 11, color: "#bbb", marginTop: 10, wordBreak: "break-all" }}>{publicUrl}</p>
+          <a
+            href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(publicUrl)}`}
+            download="survey-qr-public.png" target="_blank" rel="noreferrer"
+            style={{ ...primaryBtnStyle, display: "inline-block", textDecoration: "none", marginTop: 8 }}
+          >⬇ QR 이미지 다운로드</a>
+        </div>
       </div>
 
-      {url && (
-        <div style={{ ...cardStyle, textAlign: "center" }}>
-          <QRCode url={url} size={220} />
-          <p style={{ marginTop: 16, color: "#888", fontSize: 13 }}>위 QR 코드를 인쇄하거나 화면에 표시하세요</p>
-          <p style={{ fontSize: 12, color: "#bbb", wordBreak: "break-all" }}>{url}</p>
-          <a href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`} download="survey-qr.png" target="_blank" rel="noreferrer" style={{ ...primaryBtnStyle, display: "inline-block", textDecoration: "none", marginTop: 12 }}>
-            QR 이미지 다운로드
-          </a>
-        </div>
-      )}
+      {/* 커스텀 URL QR */}
+      <div style={cardStyle}>
+        <h3 style={{ color: "#6C63FF", marginBottom: 4 }}>🔗 다른 URL로 QR 만들기</h3>
+        <input style={{ ...inputStyle, marginTop: 8 }} value={customUrl} onChange={e => setCustomUrl(e.target.value)} placeholder="https://..." />
+        {customUrl && (
+          <div style={{ textAlign: "center", marginTop: 16 }}>
+            <QRCode url={customUrl} size={180} />
+            <a
+              href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(customUrl)}`}
+              download="survey-qr-custom.png" target="_blank" rel="noreferrer"
+              style={{ ...primaryBtnStyle, display: "inline-block", textDecoration: "none", marginTop: 12 }}
+            >⬇ QR 이미지 다운로드</a>
+          </div>
+        )}
+      </div>
 
       <div style={{ ...cardStyle, background: "#fffbeb", border: "1px solid #fde68a" }}>
-        <h4 style={{ color: "#92400e", marginTop: 0, marginBottom: 8 }}>💡 사용 방법</h4>
-        <ol style={{ margin: 0, paddingLeft: 20, color: "#78350f", fontSize: 14, lineHeight: 2 }}>
-          <li>이 앱을 웹호스팅 서비스에 배포하세요 (Vercel, GitHub Pages 등)</li>
-          <li>배포된 URL을 위에 입력하세요</li>
-          <li>생성된 QR 코드를 인쇄/표시하면 참가자가 스캔 후 바로 설문 참여 가능</li>
-        </ol>
+        <h4 style={{ color: "#92400e", marginTop: 0, marginBottom: 8 }}>💡 두 가지 링크 정리</h4>
+        <div style={{ fontSize: 14, color: "#78350f", lineHeight: 2 }}>
+          <p style={{ margin: 0 }}>👤 <b>관리자용</b> (탭 전체 보임): <span style={{ fontSize: 11, color: "#999" }}>{currentBase}</span></p>
+          <p style={{ margin: 0 }}>👥 <b>참여자용</b> (설문만 보임): <span style={{ fontSize: 11, color: "#999" }}>{publicUrl}</span></p>
+        </div>
       </div>
     </div>
   );
@@ -300,27 +256,13 @@ function QRTab() {
 
 // ── MAIN APP ──────────────────────────────────────────────────
 export default function App() {
+  const isPublicMode = new URLSearchParams(window.location.search).get("mode") === "public";
   const [tab, setTab] = useState("survey");
   const [data, setData] = useState(loadData);
 
-  const updateSurvey = (survey) => {
-    const updated = { ...data, survey };
-    setData(updated);
-    saveData(updated);
-  };
-
-  const addResponse = (response) => {
-    const updated = { ...data, responses: [...data.responses, response] };
-    setData(updated);
-    saveData(updated);
-  };
-
-  const clearResponses = () => {
-    if (!window.confirm("모든 응답을 삭제할까요?")) return;
-    const updated = { ...data, responses: [] };
-    setData(updated);
-    saveData(updated);
-  };
+  const updateSurvey = (survey) => { const updated = { ...data, survey }; setData(updated); saveData(updated); };
+  const addResponse = (response) => { const updated = { ...data, responses: [...data.responses, response] }; setData(updated); saveData(updated); };
+  const clearResponses = () => { if (!window.confirm("모든 응답을 삭제할까요?")) return; const updated = { ...data, responses: [] }; setData(updated); saveData(updated); };
 
   const tabs = [
     { id: "survey", label: "📝 설문 참여" },
@@ -329,15 +271,28 @@ export default function App() {
     { id: "qr", label: "📱 QR 코드" },
   ];
 
+  // ── 참여자 전용 모드 ──
+  if (isPublicMode) {
+    return (
+      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%)", fontFamily: "'Pretendard', 'Apple SD Gothic Neo', sans-serif" }}>
+        <div style={{ background: "linear-gradient(135deg, #6C63FF, #FF6B9D)", padding: "24px 20px", textAlign: "center", boxShadow: "0 4px 20px rgba(108,99,255,0.3)" }}>
+          <h1 style={{ margin: 0, color: "#fff", fontSize: 22, fontWeight: 800 }}>📋 설문 참여</h1>
+          <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,0.8)", fontSize: 13 }}>잠깐의 시간을 내어 주셔서 감사합니다 🙏</p>
+        </div>
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 16px 40px" }}>
+          <SurveyTab survey={data.survey} onSubmit={addResponse} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── 관리자 모드 ──
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%)", fontFamily: "'Pretendard', 'Apple SD Gothic Neo', sans-serif" }}>
-      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #6C63FF, #FF6B9D)", padding: "24px 20px", textAlign: "center", boxShadow: "0 4px 20px rgba(108,99,255,0.3)" }}>
-        <h1 style={{ margin: 0, color: "#fff", fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>📋 Survey Builder</h1>
+        <h1 style={{ margin: 0, color: "#fff", fontSize: 22, fontWeight: 800 }}>📋 Survey Builder</h1>
         <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,0.8)", fontSize: 13 }}>설문 만들기 · 참여하기 · 결과 보기</p>
       </div>
-
-      {/* Tabs */}
       <div style={{ display: "flex", background: "#fff", borderBottom: "1px solid #eee", overflowX: "auto" }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
@@ -349,8 +304,6 @@ export default function App() {
           }}>{t.label}</button>
         ))}
       </div>
-
-      {/* Content */}
       <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 16px 40px" }}>
         {tab === "survey" && <SurveyTab survey={data.survey} onSubmit={addResponse} />}
         {tab === "edit" && <EditTab survey={data.survey} onChange={updateSurvey} />}
@@ -361,36 +314,11 @@ export default function App() {
   );
 }
 
-// ── Styles ─────────────────────────────────────────────────────
-const cardStyle = {
-  background: "#fff", borderRadius: 16, padding: "20px",
-  boxShadow: "0 2px 12px rgba(108,99,255,0.08)", border: "1px solid #f0eeff"
-};
-const inputStyle = {
-  width: "100%", padding: "10px 14px", borderRadius: 10,
-  border: "1.5px solid #e5e0ff", fontSize: 14, outline: "none",
-  boxSizing: "border-box", marginBottom: 4, background: "#fafaff",
-  fontFamily: "inherit", color: "#333"
-};
+// ── Styles ──
+const cardStyle = { background: "#fff", borderRadius: 16, padding: "20px", boxShadow: "0 2px 12px rgba(108,99,255,0.08)", border: "1px solid #f0eeff" };
+const inputStyle = { width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e5e0ff", fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 4, background: "#fafaff", fontFamily: "inherit", color: "#333" };
 const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 };
-const primaryBtnStyle = {
-  background: "linear-gradient(135deg, #6C63FF, #9B59FF)", color: "#fff",
-  border: "none", borderRadius: 12, padding: "12px 20px", fontSize: 14,
-  fontWeight: 700, cursor: "pointer", width: "100%", textAlign: "center"
-};
-const secondaryBtnStyle = {
-  background: "#f0eeff", color: "#6C63FF", border: "none",
-  borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600,
-  cursor: "pointer", marginTop: 8
-};
-const dangerBtnStyle = {
-  background: "#fff0f0", color: "#e55", border: "1px solid #fdd",
-  borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600,
-  cursor: "pointer"
-};
-const choiceStyle = {
-  display: "flex", alignItems: "center", gap: 10,
-  padding: "10px 14px", borderRadius: 10, background: "#fafaff",
-  border: "1.5px solid #e5e0ff", marginBottom: 8, cursor: "pointer",
-  fontSize: 14, color: "#333"
-};
+const primaryBtnStyle = { background: "linear-gradient(135deg, #6C63FF, #9B59FF)", color: "#fff", border: "none", borderRadius: 12, padding: "12px 20px", fontSize: 14, fontWeight: 700, cursor: "pointer", width: "100%", textAlign: "center" };
+const secondaryBtnStyle = { background: "#f0eeff", color: "#6C63FF", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", marginTop: 8 };
+const dangerBtnStyle = { background: "#fff0f0", color: "#e55", border: "1px solid #fdd", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" };
+const choiceStyle = { display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, background: "#fafaff", border: "1.5px solid #e5e0ff", marginBottom: 8, cursor: "pointer", fontSize: 14, color: "#333" };
