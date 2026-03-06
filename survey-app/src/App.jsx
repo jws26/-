@@ -35,22 +35,16 @@ function QRCode({ url, size = 200 }) {
   );
 }
 
-// ── TAB: 설문 편집 ──────────────────────────────────────────────
 function EditTab({ survey, onChange }) {
   const [localSurvey, setLocalSurvey] = useState(survey);
   useEffect(() => setLocalSurvey(survey), [survey]);
-
   const update = (updated) => { setLocalSurvey(updated); onChange(updated); };
-  const addQuestion = () => {
-    const newQ = { id: Date.now(), type: "radio", text: "새 질문", options: ["옵션 1", "옵션 2"] };
-    update({ ...localSurvey, questions: [...localSurvey.questions, newQ] });
-  };
+  const addQuestion = () => { const newQ = { id: Date.now(), type: "radio", text: "새 질문", options: ["옵션 1", "옵션 2"] }; update({ ...localSurvey, questions: [...localSurvey.questions, newQ] }); };
   const removeQuestion = (id) => update({ ...localSurvey, questions: localSurvey.questions.filter(q => q.id !== id) });
   const updateQuestion = (id, field, value) => update({ ...localSurvey, questions: localSurvey.questions.map(q => q.id === id ? { ...q, [field]: value } : q) });
   const addOption = (id) => { const q = localSurvey.questions.find(q => q.id === id); updateQuestion(id, "options", [...q.options, `옵션 ${q.options.length + 1}`]); };
   const updateOption = (qid, idx, val) => { const q = localSurvey.questions.find(q => q.id === qid); const opts = [...q.options]; opts[idx] = val; updateQuestion(qid, "options", opts); };
   const removeOption = (qid, idx) => { const q = localSurvey.questions.find(q => q.id === qid); updateQuestion(qid, "options", q.options.filter((_, i) => i !== idx)); };
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={cardStyle}>
@@ -92,16 +86,13 @@ function EditTab({ survey, onChange }) {
   );
 }
 
-// ── TAB: 설문 참여 ──────────────────────────────────────────────
 function SurveyTab({ survey, onSubmit }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
-
   const handleRadio = (qid, val) => setAnswers(a => ({ ...a, [qid]: val }));
   const handleCheckbox = (qid, val, checked) => setAnswers(a => { const prev = a[qid] || []; return { ...a, [qid]: checked ? [...prev, val] : prev.filter(v => v !== val) }; });
   const handleText = (qid, val) => setAnswers(a => ({ ...a, [qid]: val }));
   const handleSubmit = () => { onSubmit({ answers, timestamp: new Date().toISOString() }); setSubmitted(true); setAnswers({}); };
-
   if (submitted) return (
     <div style={{ textAlign: "center", padding: "60px 20px" }}>
       <div style={{ fontSize: 64, marginBottom: 16 }}>🎉</div>
@@ -110,7 +101,6 @@ function SurveyTab({ survey, onSubmit }) {
       <button onClick={() => setSubmitted(false)} style={primaryBtnStyle}>다시 참여하기</button>
     </div>
   );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ ...cardStyle, background: "linear-gradient(135deg, #6C63FF22, #FF6B9D22)", border: "1px solid #6C63FF44" }}>
@@ -142,7 +132,6 @@ function SurveyTab({ survey, onSubmit }) {
   );
 }
 
-// ── TAB: 결과 보기 ──────────────────────────────────────────────
 function ResultsTab({ survey, responses, onClear }) {
   if (responses.length === 0) return (
     <div style={{ textAlign: "center", padding: "60px 20px", color: "#aaa" }}>
@@ -150,7 +139,6 @@ function ResultsTab({ survey, responses, onClear }) {
       <p>아직 응답이 없습니다.</p>
     </div>
   );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -203,75 +191,55 @@ function ResultsTab({ survey, responses, onClear }) {
   );
 }
 
-// ── TAB: QR 코드 ──────────────────────────────────────────────
 function QRTab() {
   const currentBase = window.location.origin;
   const publicUrl = `${currentBase}?mode=public`;
   const [customUrl, setCustomUrl] = useState("");
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-      {/* 참여자용 QR (자동 생성) */}
       <div style={cardStyle}>
         <h3 style={{ color: "#6C63FF", marginBottom: 4 }}>👥 참여자용 QR (설문만 보임)</h3>
         <p style={{ color: "#888", fontSize: 13, marginBottom: 16 }}>이 QR을 인쇄해서 나눠주세요.<br />탭 없이 설문 화면만 바로 열립니다!</p>
         <div style={{ textAlign: "center" }}>
           <QRCode url={publicUrl} size={200} />
           <p style={{ fontSize: 11, color: "#bbb", marginTop: 10, wordBreak: "break-all" }}>{publicUrl}</p>
-          <a
-            href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(publicUrl)}`}
-            download="survey-qr-public.png" target="_blank" rel="noreferrer"
-            style={{ ...primaryBtnStyle, display: "inline-block", textDecoration: "none", marginTop: 8 }}
-          >⬇ QR 이미지 다운로드</a>
+          <a href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(publicUrl)}`} download="survey-qr-public.png" target="_blank" rel="noreferrer" style={{ ...primaryBtnStyle, display: "inline-block", textDecoration: "none", marginTop: 8 }}>⬇ QR 이미지 다운로드</a>
         </div>
       </div>
-
-      {/* 커스텀 URL QR */}
       <div style={cardStyle}>
         <h3 style={{ color: "#6C63FF", marginBottom: 4 }}>🔗 다른 URL로 QR 만들기</h3>
         <input style={{ ...inputStyle, marginTop: 8 }} value={customUrl} onChange={e => setCustomUrl(e.target.value)} placeholder="https://..." />
         {customUrl && (
           <div style={{ textAlign: "center", marginTop: 16 }}>
             <QRCode url={customUrl} size={180} />
-            <a
-              href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(customUrl)}`}
-              download="survey-qr-custom.png" target="_blank" rel="noreferrer"
-              style={{ ...primaryBtnStyle, display: "inline-block", textDecoration: "none", marginTop: 12 }}
-            >⬇ QR 이미지 다운로드</a>
+            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(customUrl)}`} download="survey-qr-custom.png" target="_blank" rel="noreferrer" style={{ ...primaryBtnStyle, display: "inline-block", textDecoration: "none", marginTop: 12 }}>⬇ QR 이미지 다운로드</a>
           </div>
         )}
       </div>
-
       <div style={{ ...cardStyle, background: "#fffbeb", border: "1px solid #fde68a" }}>
         <h4 style={{ color: "#92400e", marginTop: 0, marginBottom: 8 }}>💡 두 가지 링크 정리</h4>
         <div style={{ fontSize: 14, color: "#78350f", lineHeight: 2 }}>
-          <p style={{ margin: 0 }}>👤 <b>관리자용</b> (탭 전체 보임): <span style={{ fontSize: 11, color: "#999" }}>{currentBase}</span></p>
-          <p style={{ margin: 0 }}>👥 <b>참여자용</b> (설문만 보임): <span style={{ fontSize: 11, color: "#999" }}>{publicUrl}</span></p>
+          <p style={{ margin: 0 }}>👤 <b>관리자용</b> (탭 전체): <span style={{ fontSize: 11, color: "#999" }}>{currentBase}</span></p>
+          <p style={{ margin: 0 }}>👥 <b>참여자용</b> (설문만): <span style={{ fontSize: 11, color: "#999" }}>{publicUrl}</span></p>
         </div>
       </div>
     </div>
   );
 }
 
-// ── MAIN APP ──────────────────────────────────────────────────
 export default function App() {
   const isPublicMode = new URLSearchParams(window.location.search).get("mode") === "public";
   const [tab, setTab] = useState("survey");
   const [data, setData] = useState(loadData);
-
   const updateSurvey = (survey) => { const updated = { ...data, survey }; setData(updated); saveData(updated); };
   const addResponse = (response) => { const updated = { ...data, responses: [...data.responses, response] }; setData(updated); saveData(updated); };
   const clearResponses = () => { if (!window.confirm("모든 응답을 삭제할까요?")) return; const updated = { ...data, responses: [] }; setData(updated); saveData(updated); };
-
   const tabs = [
     { id: "survey", label: "📝 설문 참여" },
     { id: "edit", label: "✏️ 설문 편집" },
     { id: "results", label: `📊 결과 (${data.responses.length})` },
     { id: "qr", label: "📱 QR 코드" },
   ];
-
-  // ── 참여자 전용 모드 ──
   if (isPublicMode) {
     return (
       <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%)", fontFamily: "'Pretendard', 'Apple SD Gothic Neo', sans-serif" }}>
@@ -285,8 +253,6 @@ export default function App() {
       </div>
     );
   }
-
-  // ── 관리자 모드 ──
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #f5f3ff 0%, #fdf2f8 100%)", fontFamily: "'Pretendard', 'Apple SD Gothic Neo', sans-serif" }}>
       <div style={{ background: "linear-gradient(135deg, #6C63FF, #FF6B9D)", padding: "24px 20px", textAlign: "center", boxShadow: "0 4px 20px rgba(108,99,255,0.3)" }}>
@@ -295,13 +261,7 @@ export default function App() {
       </div>
       <div style={{ display: "flex", background: "#fff", borderBottom: "1px solid #eee", overflowX: "auto" }}>
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            flex: 1, padding: "14px 8px", border: "none", background: "none", cursor: "pointer",
-            fontSize: 13, fontWeight: tab === t.id ? 700 : 400,
-            color: tab === t.id ? "#6C63FF" : "#999",
-            borderBottom: tab === t.id ? "2px solid #6C63FF" : "2px solid transparent",
-            transition: "all 0.2s", whiteSpace: "nowrap"
-          }}>{t.label}</button>
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, padding: "14px 8px", border: "none", background: "none", cursor: "pointer", fontSize: 13, fontWeight: tab === t.id ? 700 : 400, color: tab === t.id ? "#6C63FF" : "#999", borderBottom: tab === t.id ? "2px solid #6C63FF" : "2px solid transparent", transition: "all 0.2s", whiteSpace: "nowrap" }}>{t.label}</button>
         ))}
       </div>
       <div style={{ maxWidth: 640, margin: "0 auto", padding: "20px 16px 40px" }}>
@@ -314,7 +274,6 @@ export default function App() {
   );
 }
 
-// ── Styles ──
 const cardStyle = { background: "#fff", borderRadius: 16, padding: "20px", boxShadow: "0 2px 12px rgba(108,99,255,0.08)", border: "1px solid #f0eeff" };
 const inputStyle = { width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid #e5e0ff", fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 4, background: "#fafaff", fontFamily: "inherit", color: "#333" };
 const labelStyle = { display: "block", fontSize: 12, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 };
